@@ -2,7 +2,7 @@
 
 An IKEv2 VPN adapted from [trailofbits/algo](https://github.com/trailofbits/algo)
 
-Since that is licensed until AGPLv3, this project is also licensed under that as well.
+Since that is licensed under AGPLv3, this project is also licensed under that as well.
 
 Documentation will come in the near future.
 
