@@ -1,0 +1,61 @@
+#!/usr/bin/with-contenv sh
+
+set -e
+
+test -z "$STRONGSWAN_HOST_CN" -o -z "$STRONGSWAN_CLIENTS" \
+  && echo '$STRONGSWAN_HOST_CN and $STRONGSWAN_CLIENTS is required' >&2 \
+  && exit 1
+
+cd /etc/ipsec.d
+
+if test ! -e private/ca-key.pem; then
+  ipsec pki --gen --type rsa --size 4096 --outform pem > private/ca-key.pem \
+    && chmod 600 private/ca-key.pem \
+    && ipsec pki --self --ca --lifetime 3650 --outform pem \
+      --in private/ca-key.pem --type rsa \
+      --dn "C=${STRONGSWAN_CA_C}, O=${STRONGSWAN_CA_O}, CN=${STRONGSWAN_CA_CN}" \
+      > cacerts/ca-cert.pem
+fi
+
+if test ! -e private/host-key.pem; then
+  ipsec pki --gen --type rsa --size 4096 --outform pem > private/host-key.pem && \
+  chmod 600 private/host-key.pem && \
+  ipsec pki --pub --in private/host-key.pem --type rsa | \
+    ipsec pki --issue --lifetime 3650 --outform pem \
+      --cacert cacerts/ca-cert.pem \
+      --cakey private/ca-key.pem \
+      --dn "C=${STRONGSWAN_CA_C}, O=${STRONGSWAN_CA_O}, CN=${STRONGSWAN_HOST_CN}" \
+      --san "${STRONGSWAN_HOST_CN}" \
+      --flag serverAuth --flag ikeIntermediate \
+      > certs/host-cert.pem
+fi
+
+for client in $STRONGSWAN_CLIENTS; do
+  if test ! -e "private/${client}-key.pem"; then
+    ipsec pki --gen --type rsa --size 2048 --outform pem > "private/${client}-key.pem"
+    chmod 600 "private/${client}-key.pem"
+    ipsec pki --pub --in "private/${client}-key.pem" --type rsa | \
+      ipsec pki --issue --lifetime 730 --outform pem \
+        --cacert cacerts/ca-cert.pem \
+        --cakey private/ca-key.pem \
+        --dn "C=${STRONGSWAN_CA_C}, O=${STRONGSWAN_CA_O}, CN=$client" \
+        --san "$client" \
+        > "certs/${client}-cert.pem"
+  fi
+  if test ! -e "private/${client}.p12"; then
+    openssl pkcs12 -export \
+      -name "$client" \
+      -inkey "private/${client}-key.pem" \
+      -in "certs/${client}-cert.pem" \
+      -certfile cacerts/ca-cert.pem \
+      -password "pass:${STRONGSWAN_CLIENTS_P12_PASSWORD}" \
+      -out "private/${client}.p12"
+  fi
+  if test -z "$(echo "$client" | fgrep '@')" -a ! -e "private/${client}.mobileconfig"; then
+    export _p12_base64="$(cat "private/${client}.p12" | base64)"
+    export _ca_cert_base64="$(cat "cacerts/ca-cert.pem" | base64)"
+    export client
+    frep "/etc/tmpl.d/tmpl.mobileconfig:private/${client}.mobileconfig" --overwrite --missing error
+    chmod 600 private/${client}.mobileconfig
+  fi
+done

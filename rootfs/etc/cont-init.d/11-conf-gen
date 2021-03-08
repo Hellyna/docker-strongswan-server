@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv sh
+
+set -e
+
+frep /etc/tmpl.d/secrets:/etc/ipsec.d/secrets \
+  /etc/tmpl.d/ipsec.conf:/etc/ipsec.conf \
+  /etc/tmpl.d/charon.conf:/etc/strongswan.d/charon.conf \
+  /etc/tmpl.d/iptables.rules:/etc/iptables/iptables.rules \
+  /etc/tmpl.d/ip6tables.rules:/etc/iptables/ip6tables.rules \
+  --overwrite --missing error
+chmod 600 /etc/ipsec.d/secrets

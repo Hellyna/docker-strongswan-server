@@ -1,0 +1,55 @@
+*mangle
+
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+-A FORWARD -m policy --pol ipsec --dir in -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+-A FORWARD -m policy --pol ipsec --dir out -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+#-A FORWARD -s {{ .Env.STRONGSWAN_IP6_POOL }} -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+#{{ if gt (atoi .Env.STRONGSWAN_REDUCE_MTU) 0 }}
+#-A FORWARD -s {{ .Env.STRONGSWAN_IP_POOL }} -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss {{ sub 1360 (atoi .Env.STRONGSWAN_REDUCE_MTU) }}
+#{{ end }}
+
+COMMIT
+
+
+*nat
+
+:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+#-A POSTROUTING -s {{ .Env.STRONGSWAN_IP_POOL }} -d 192.168.38.0/24,192.168.40.0/24 -m policy --pol none --dir out -j ACCEPT
+-A POSTROUTING -s {{ .Env.STRONGSWAN_IP_POOL }} -m policy --pol none --dir out -j MASQUERADE
+
+COMMIT
+
+
+*filter
+
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p esp -j ACCEPT
+-A INPUT -p ah -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m hashlimit --hashlimit-upto 5/s --hashlimit-mode srcip --hashlimit-srcmask 32 --hashlimit-name icmp-echo-drop -j ACCEPT
+-A INPUT -p udp -m multiport --dports 500,4500 -j ACCEPT
+-A INPUT -p ipencap -m policy --dir in --pol ipsec --proto esp -j ACCEPT
+
+-A FORWARD -s {{ .Env.STRONGSWAN_IP_POOL }} -d {{ .Env.STRONGSWAN_IP_POOL }} -j {{ if and .Env.STRONGSWAN_DROP_BETWEEN_CLIENTS (toBool .Env.STRONGSWAN_DROP_BETWEEN_CLIENTS) }}DROP{{ else }}ACCEPT{{ end }}
+
+-A FORWARD -s {{ .Env.STRONGSWAN_IP_POOL }} -d 169.254.0.0/16 -j DROP
+
+-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -p tcp --dport 445 -j {{ if and .Env.STRONGSWAN_BLOCK_SMB (toBool .Env.STRONGSWAN_BLOCK_SMB) }}DROP{{ else }}ACCEPT{{ end }}
+-A FORWARD -p udp -m multiport --ports 137,138 -j {{ if and .Env.STRONGSWAN_BLOCK_NETBIOS (toBool .Env.STRONGSWAN_BLOCK_NETBIOS) }}DROP{{ else }}ACCEPT{{ end }}
+-A FORWARD -p tcp -m multiport --ports 137,138 -j {{ if and .Env.STRONGSWAN_BLOCK_NETBIOS (toBool .Env.STRONGSWAN_BLOCK_NETBIOS) }}DROP{{ else }}ACCEPT{{ end }}
+
+-A FORWARD -m conntrack --ctstate NEW -s {{ .Env.STRONGSWAN_IP_POOL }} -m policy --pol ipsec --dir in -j ACCEPT
+
+COMMIT
