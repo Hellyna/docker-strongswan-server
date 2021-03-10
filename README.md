@@ -15,14 +15,16 @@ An IKEv2 VPN adapted from [trailofbits/algo](https://github.com/trailofbits/algo
 - Minimum kernel version: 5.8 for IPv6 support. ([Reference](https://serverfault.com/questions/1046623/received-netlink-error-invalid-argument-when-trying-to-connect-using-ipv6)
 - Docker daemon started with [ipv6 support](https://docs.docker.com/config/daemon/ipv6/).
 - [robbertkl/ipv6nat](https://github.com/robbertkl/docker-ipv6nat) started and configured.
+- Domain name pointed to the server.
 
 # Quickstart (`docker-compose`) 💯
 
 These environment variables are required:
-+ `STRONGSWAN_HOST_CN`
-+ `STRONGSWAN_IP_POOL`
-+ `STRONGSWAN_IP6_POOL`
-+ `STRONGSWAN_CLIENTS`
++ `STRONGSWAN_HOST_CN` - The domain name of the server you have pointed in the requirements.
++ `STRONGSWAN_IP_POOL` - IPv4 pool which you wish to allocate to the VPN clients.
++ `STRONGSWAN_IP6_POOL` - IPv6 pool which you wish to allocate to the VPN clients.
++ `STRONGSWAN_CLIENTS` - VPN client identities to generate.
++ `STRONGSWAN_DNS` - DNS server to use for the VPN clients.
 
 ```yaml
 version: '2.4'
