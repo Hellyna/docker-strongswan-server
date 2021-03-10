@@ -113,4 +113,4 @@ For macOS/iOS mobileconfig, the LocalIdentifier can only be a plain domain name 
 
 Also for macOS/iOS mobileconfig, the server `leftid` must be set to the server's domain name used to generate the `host-cert.pem`.
 
-Since that is licensed under AGPLv3, this project is also licensed under that as well.
+Since the [parent project](https://github.com/trailofbits/algo) is licensed under AGPLv3, this project is also licensed under that as well.
