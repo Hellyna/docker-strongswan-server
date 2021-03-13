@@ -22,6 +22,8 @@ COMMIT
 :POSTROUTING ACCEPT [0:0]
 
 #-A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -d fd00:38:1::/48 -m policy --pol none --dir out -j ACCEPT
+-A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -p tcp -m tcp --dport 53 -m policy --pol none --dir out -j SNAT --to-source [{{ .Env.STRONGSWAN_DNS6 }}]:53
+-A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -p udp -m udp --dport 53 -m policy --pol none --dir out -j SNAT --to-source [{{ .Env.STRONGSWAN_DNS6 }}]:53
 -A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -m policy --pol none --dir out -j MASQUERADE
 
 COMMIT

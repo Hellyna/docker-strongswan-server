@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/usr/bin/with-contenv sh
+
+set -e
 
 iptables-restore /etc/iptables/iptables.rules
-ip6tables-restore /etc/iptables/ip6tables.rules
+if test "STRONGSWAN_ENABLE_IPV6" = "1"; then
+  ip6tables-restore /etc/iptables/ip6tables.rules
+fi

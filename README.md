@@ -4,7 +4,7 @@ An IKEv2 VPN adapted from [trailofbits/algo](https://github.com/trailofbits/algo
 
 ## Features ✨
 
-- Complete IPv6 support
+- IPv6-first, with fallback to IPv4-only mode.
 - Auto generation of identites.
 - Authentication are by certificates only.
 - Generate `.mobileconfig` for import in iOS and macOS devices.
@@ -12,19 +12,36 @@ An IKEv2 VPN adapted from [trailofbits/algo](https://github.com/trailofbits/algo
 
 # Requirements
 
+To enable IPv4-only mode, please set `STRONGSWAN_ENABLE_IPV6` to `0`.
+
+Please report any bugs if you face issues with IPv4-only mode.
+
+## IPv6 Dual Stack (default)
+
+- Domain name pointed to the server.
 - Minimum kernel version: 5.8 for IPv6 support. ([Reference](https://serverfault.com/questions/1046623/received-netlink-error-invalid-argument-when-trying-to-connect-using-ipv6)
 - Docker daemon started with [ipv6 support](https://docs.docker.com/config/daemon/ipv6/).
 - [robbertkl/ipv6nat](https://github.com/robbertkl/docker-ipv6nat) started and configured.
+
+In addition, these variables have to be set:
++ `STRONGSWAN_HOST_CN` - The domain name of the server you have pointed in the requirements.
++ `STRONGSWAN_IP_POOL` - IPv4 pool which you wish to allocate to the VPN clients. CIDR format.
++ `STRONGSWAN_IP6_POOL` - IPv6 pool which you wish to allocate to the VPN clients. CIDR format.
++ `STRONGSWAN_CLIENTS` - VPN client identities to generate, separated by spaces.
++ `STRONGSWAN_DNS` - IPv4 DNS server to use for the VPN clients.
++ `STRONGSWAN_DNS6` - IPv6 DNS server to use for the VPN clients.
+
+## IPv4-only
+
 - Domain name pointed to the server.
 
-# Quickstart (`docker-compose`) 💯
-
-These environment variables are required:
+In addition, these variables have to be set:
 + `STRONGSWAN_HOST_CN` - The domain name of the server you have pointed in the requirements.
-+ `STRONGSWAN_IP_POOL` - IPv4 pool which you wish to allocate to the VPN clients.
-+ `STRONGSWAN_IP6_POOL` - IPv6 pool which you wish to allocate to the VPN clients.
-+ `STRONGSWAN_CLIENTS` - VPN client identities to generate.
-+ `STRONGSWAN_DNS` - DNS server to use for the VPN clients.
++ `STRONGSWAN_IP_POOL` - IPv4 pool which you wish to allocate to the VPN clients. CIDR format.
++ `STRONGSWAN_CLIENTS` - VPN client identities to generate, separated by spaces.
++ `STRONGSWAN_DNS` - IPv4 DNS server to use for the VPN clients.
+
+# Quickstart IPv6 Dual Stack (`docker-compose`) 💯
 
 ```yaml
 version: '2.4'
@@ -42,6 +59,7 @@ services:
       STRONGSWAN_IP_POOL: 192.168.14.0/24
       STRONGSWAN_IP6_POOL: fd00:14:1:1::/97
       STRONGSWAN_DNS: 1.1.1.1
+      STRONGSWAN_DNS6: 2606:4700:4700::64
     sysctls:
       net.ipv4.ip_forward: 1
       net.ipv4.conf.all.forwarding: 1
