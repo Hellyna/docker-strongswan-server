@@ -10,7 +10,7 @@ frep /etc/tmpl.d/secrets:/etc/ipsec.d/secrets \
 
 chmod 600 /etc/ipsec.d/secrets
 
-if test "STRONGSWAN_ENABLE_IPV6" = "1"; then
+if test "$STRONGSWAN_ENABLE_IPV6" = "1"; then
   frep /etc/tmpl.d/ip6tables.rules:/etc/iptables/ip6tables.rules \
     --overwrite --missing error
 fi
