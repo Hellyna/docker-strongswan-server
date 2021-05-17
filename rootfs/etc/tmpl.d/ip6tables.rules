@@ -26,7 +26,8 @@ COMMIT
 -A PREROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -p udp -m udp --dport 53 -j DNAT --to-destination [{{ .Env.STRONGSWAN_DNS6 }}]:53
 {{ end }}
 
--A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -m policy --pol none --dir out -j MASQUERADE
+-A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
+-A POSTROUTING -s {{ .Env.STRONGSWAN_IP6_POOL }} -o eth0 -j MASQUERADE
 
 COMMIT
 
